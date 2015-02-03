@@ -20,7 +20,11 @@ apply plugin: 'kotlin-android'
 
 android {
     compileSdkVersion 21
-    buildToolsVersion "21.1.2"
+    buildToolsVersion "21.1.1"
+
+    lintOptions {
+        abortOnError false
+    }
 
     defaultConfig {
         applicationId "li.ruoshi.nextday"
@@ -50,7 +54,7 @@ android {
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile 'com.android.support:appcompat-v7:21.0.3'
+    compile 'com.android.support:appcompat-v7:21.0.+'
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     compile 'com.squareup.okhttp:okhttp:2.2.0'
     compile 'com.google.code.gson:gson:2.3.1'
@@ -58,3 +62,22 @@ dependencies {
     compile 'com.squareup.picasso:picasso:2.4.0'
     compile 'com.squareup.okhttp:okhttp-urlconnection:2.2.0'
 }
+
+task genAppKeyTemplate << {
+    File f = project.file("./src/main/res/raw/app_key.json")
+    if (f.exists()){
+        println "app_key.json exists."
+    }else {
+        File raw = project.file("./src/main/res/raw")
+        raw.mkdirs()
+
+        if(f.createNewFile()){
+            f.append("{\n" +
+                    "    \"name\": \"\",\n" +
+                    "    \"key\": \"\"\n" +
+                    "}")
+        }
+    }
+}
+
+tasks.findByName("preBuild").dependsOn(tasks.findByName("genAppKeyTemplate"))
