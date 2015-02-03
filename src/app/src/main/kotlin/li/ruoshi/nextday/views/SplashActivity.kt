@@ -17,10 +17,26 @@
 package li.ruoshi.nextday.views
 
 import android.app.Activity
+import android.os.Bundle
+import li.ruoshi.nextday.R
+import android.graphics.Typeface
+import android.widget.TextView
 
 /**
  * Created by ruoshili on 1/15/15.
  */
-public class AboutActivity : Activity() {
+public class SplashActivity : Activity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_splash)
 
+        val tf = Typeface.createFromAsset(getAssets(), "fonts/Roboto_Thin.ttf");
+        val tv =  findViewById(R.id.logo_text) as TextView;
+        tv.setTypeface(tf);
+    }
+
+    override fun onResume() {
+        // TODO: 发起网络请求，获取前5天的数据，并下载当天的图片
+        super.onResume()
+    }
 }
