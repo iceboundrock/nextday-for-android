@@ -113,20 +113,6 @@ public class MainActivity : Activity() {
         return dstBmp
     }
 
-    fun imageViewAnimatedChange(v: ImageView, newImage:Bitmap) {
-        val anim_out = AnimationUtils.loadAnimation(this, android.R.anim.fade_out);
-        val anim_in  = AnimationUtils.loadAnimation(this, android.R.anim.fade_in);
-        anim_out.setAnimationListener(object: AnimationListener{
-            override fun onAnimationStart(animation:Animation) {
-                v.setImageBitmap(newImage);
-                v.startAnimation(anim_in);
-            }
-            override fun  onAnimationRepeat(animation:Animation) {}
-            override fun  onAnimationEnd(animation:Animation) {}
-        });
-        v.startAnimation(anim_out);
-    }
-
     override fun onResume() {
 
         super.onResume()
@@ -136,23 +122,8 @@ public class MainActivity : Activity() {
 
         r.getTodayAsync {
             (dailyInfo) ->
-
-            Log.d(TAG, dailyInfo.thumbnail.url)
-            val thumbnailUrl = dailyInfo.thumbnail.url
             val height = imageView.getHeight()
             val width = imageView.getWidth()
-
-            val begin = thumbnailUrl.indexOf(',')
-            val data = thumbnailUrl.subSequence(begin + 1, thumbnailUrl.length())
-            val image = Base64.decode(data.toString(), Base64.DEFAULT)
-
-            val thumbnail = BitmapFactory.decodeByteArray(image, 0, image.size())
-            val dstThumb = scaleBitmap(thumbnail, width, height)
-            thumbnail.recycle()
-            handler.post({
-                () ->
-                imageView.setImageBitmap(dstThumb)
-            })
 
             val srcBmp = Picasso.with(this).load(dailyInfo.images.big568h3x).get()
             val dstBmp = scaleBitmap(srcBmp, width, height)
@@ -160,7 +131,7 @@ public class MainActivity : Activity() {
 
             handler.post({
                 () ->
-                imageViewAnimatedChange(imageView, dstBmp)
+                imageView.setImageBitmap(dstBmp)
                 val date = dateKeyFormat.parseDateTime(dailyInfo.dateKey)
 
                 this.dayOfMonthText!!.setText(java.lang.String.format ("%02d", date.getDayOfMonth()))
@@ -186,11 +157,11 @@ public class MainActivity : Activity() {
 
 
                 if (dailyInfo.music != null) {
-                    artistText!!.setText(dailyInfo.music!!.artist)
-                    songNameText!!.setText(dailyInfo.music!!.title)
+                    artistText!!.setText(dailyInfo.music.artist)
+                    songNameText!!.setText(dailyInfo.music.title)
 
                     mediaPlayer = MediaPlayer()
-                    mediaPlayer!!.setDataSource(dailyInfo.music!!.url)
+                    mediaPlayer!!.setDataSource(dailyInfo.music.url)
                     mediaPlayer!!.prepareAsync()
                     mediaPlayer!!.setOnPreparedListener({ mp -> mp.start() })
                     mediaPlayer!!.start()
