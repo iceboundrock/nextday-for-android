@@ -1,7 +1,7 @@
-#Nextday for Android
+#Nextday for Android [![build status](https://travis-ci.org/iceboundrock/nextday-for-android.svg)](https://travis-ci.org/iceboundrock/nextday-for-android)
+
 ... is an Andorid client of Nextday(http://www.nextday.im/), written in Kotlin language.
 
-[![build status](https://travis-ci.org/iceboundrock/nextday-for-android.svg)](https://travis-ci.org/iceboundrock/nextday-for-android)
 
 ##How to build
 
