@@ -1,0 +1,145 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                tools:context="li.ruoshi.nextday.views.DayViewHolder"
+                tools:ignore="RtlHardcoded">
+
+    <ImageView
+        android:id="@+id/image_of_day"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@string/picture_of_today"
+        android:scaleType="centerCrop"/>
+
+    <RelativeLayout
+        android:id="@+id/textContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginLeft="@dimen/day_view_left_margin"
+        android:visibility="invisible"
+        >
+
+        <ProgressBar
+            android:id="@+id/progress_bar"
+            style="@android:style/Widget.Holo.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="4dp"
+            android:layout_marginRight="20dp"
+            android:visibility="invisible"
+            />
+
+        <RelativeLayout
+            android:id="@+id/music_container"
+            android:layout_width="match_parent"
+            android:layout_height="32dp"
+            android:layout_above="@id/progress_bar"
+            android:clickable="true">
+
+            <ImageView
+                android:id="@+id/play_music_button"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_centerVertical="true"
+                android:background="@android:color/transparent"
+                android:contentDescription="@string/play"
+                android:scaleType="centerInside"
+                android:src="@drawable/play"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginLeft="8dp"
+                android:layout_toRightOf="@id/play_music_button"
+                android:orientation="vertical"
+                >
+
+                <TextView
+                    android:id="@+id/songNameText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/shadow_text_style"
+                    android:textSize="14sp"
+                    android:textStyle="bold"/>
+
+                <TextView
+                    android:id="@+id/artistText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="-4dp"
+                    android:textAppearance="@style/shadow_text_style"
+                    android:textSize="10sp"
+                    tools:ignore="SmallSp"/>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/authorText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentRight="true"
+                android:layout_marginBottom="2dp"
+                android:layout_marginRight="20dp"
+                android:textSize="10sp"
+                tools:ignore="SmallSp"/>
+
+        </RelativeLayout>
+
+        <TextView
+            android:id="@+id/textText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@id/music_container"
+            android:layout_marginBottom="32dp"
+            android:paddingLeft="@dimen/text_line_padding"
+            android:paddingRight="@dimen/text_line_padding"
+            android:textAppearance="@style/shadow_text_style"
+            android:textSize="12sp"
+            />
+
+        <TextView
+            android:id="@+id/locationText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@id/textText"
+            android:paddingLeft="@dimen/text_line_padding"
+            android:paddingRight="@dimen/text_line_padding"
+            android:textAppearance="@style/shadow_text_style"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            />
+
+        <View
+            android:id="@+id/center_line"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_centerVertical="true"
+            />
+
+        <TextView
+            android:id="@+id/dayOfMonthText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/center_line"
+            android:layout_centerVertical="true"
+            android:fontFamily="sans-serif-thin"
+            android:textAppearance="@style/shadow_text_style"
+            android:textSize="96sp"
+            />
+
+        <TextView
+            android:id="@+id/monthAndDayOfWeekText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/dayOfMonthText"
+            android:layout_marginTop="-24dp"
+            android:textAppearance="@style/shadow_text_style"
+            android:textSize="24sp"
+            android:typeface="sans"
+            />
+    </RelativeLayout>
+</RelativeLayout>

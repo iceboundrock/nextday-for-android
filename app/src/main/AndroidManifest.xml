@@ -1,12 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="li.ruoshi.nextday" >
+<manifest
+    package="li.ruoshi.nextday"
+    xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+
     <application
+        android:name=".NextDayApp"
         android:allowBackup="true"
         android:icon="@drawable/logo"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme" >
+        >
+
         <activity
             android:name=".views.MainActivity"
             android:label="@string/app_name"
@@ -18,13 +24,9 @@
             </intent-filter>
 
         </activity>
-        <activity
-            android:name=".views.SplashActivity"
-            android:theme="@android:style/Theme.Holo.NoActionBar.Fullscreen"
-            android:screenOrientation="portrait"
-            android:label="@string/app_name" >
-
-        </activity>
+        <meta-data
+            android:name="io.fabric.ApiKey"
+            android:value="11007acd6138210f5bf7a78877443e9d55cc6cf4"/>
     </application>
 
 </manifest>

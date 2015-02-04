@@ -1,192 +1,167 @@
 package li.ruoshi.nextday.models
 
-import java.security.MessageDigest
 import android.content.Context
-import com.squareup.okhttp.OkHttpClient
-import com.squareup.okhttp.Request
-import org.joda.time.DateTime
-import com.squareup.okhttp.Callback
 import android.util.Log
-import java.io.IOException
-import com.squareup.okhttp.Response
-import org.joda.time.format.DateTimeFormat
-import java.util.Locale
-import com.squareup.okhttp.Headers
-import java.util.zip.GZIPInputStream
-import okio.GzipSource
-import com.squareup.okhttp.internal.http.RealResponseBody
-import okio.Okio
-import java.io.Reader
 import com.google.gson.Gson
 import com.google.gson.JsonParser
-import android.util.SparseArray
-import java.util.ArrayList
+import okhttp3.OkHttpClient
+import okhttp3.ResponseBody
+import okhttp3.logging.HttpLoggingInterceptor
+import org.threeten.bp.LocalDate
+import org.threeten.bp.ZonedDateTime
+import org.threeten.bp.format.DateTimeFormatter
+import retrofit2.*
+import retrofit2.http.GET
+import retrofit2.http.Header
+import retrofit2.http.Headers
+import retrofit2.http.Url
+import rx.Observable
+import java.io.InputStreamReader
+import java.lang.reflect.Type
+import java.util.*
 
 /**
  * Created by ruoshili on 1/11/15.
  */
-public class DailyInfoRepository(val context: Context) {
-    val TAG = javaClass<DailyInfoRepository>().getSimpleName();
-
+class DailyInfoRepository(val context: Context) {
     // constants
-    val DateHeaderName = "Date"
-    val AuthorizationHeaderName = "Authorization"
-    val ContentEncodingHeaderName = "Content-Encoding"
-    val ContentLengthHeaderName = "Content-Length"
-    val UserAgentHeaderName = "User-Agent"
-    val UserAgent = "github.com/iceboundrock/nextday-for-android"
-    val EmptyString = ""
-
-    val BaseUrl = "http://api.nextday.im"
-    val DateRangeFormat = "yyyyMMdd"
-    val GZIP = "gzip"
-
-
-    val httpClient = OkHttpClient()
-
-    val cache = SparseArray<DailyInfo>()
-
-
-    public fun getTodayAsync(onNewData: (dailyInfo: DailyInfo) -> Unit) {
-        val today = DateTime().minusDays(1)
-        val todayKey = today.getYear() * 100 * 100 + today.getMonthOfYear() * 100 + today.getDayOfMonth()
-        getDaysAsync(todayKey.toString(), "", {
-            () ->
-
-
-            onNewData(cache.get(todayKey))
-        })
+    companion object {
+        const val TAG = "DailyInfoRepository";
+        const val BaseUrl = "http://api.nextday.im/"
+        const val DateRangeFormat = "yyyyMMdd"
     }
 
-    private fun isOk(resp: Response): Boolean {
-        val rc = resp.code()
+    private val cache = ArrayList<DailyInfo>(64)
+    private val logging: HttpLoggingInterceptor
+    private val httpClient: OkHttpClient
+    private val nextDayService: NextDayService
 
-        return rc >= 200 && rc < 300
+    // add your other interceptors …
+    // add logging as last interceptor
+    init {
+        logging = HttpLoggingInterceptor()
+        logging.level = HttpLoggingInterceptor.Level.BODY
+        httpClient = OkHttpClient
+                .Builder()
+                .addInterceptor(HttpGzipInterceptor())
+                .addInterceptor(logging)
+                .build()
+
+        nextDayService = Retrofit
+                .Builder()
+                .addConverterFactory(DailyInfoConverterFactory())
+                .baseUrl(BaseUrl).client(httpClient)
+                .build()
+                .create(NextDayService::class.java)
+    }
+
+
+    private class DailyInfoConverterFactory() : Converter.Factory() {
+        override fun responseBodyConverter(type: Type?, annotations: Array<out Annotation>?, retrofit: Retrofit?): Converter<ResponseBody, *>? {
+            if (type == null) {
+                return null
+            }
+
+            return Converter<okhttp3.ResponseBody, List<DailyInfo>> {
+
+                val reader = InputStreamReader(it.byteStream())
+                val parser = JsonParser()
+
+                val gson = Gson()
+                val data = parser.parse(reader).asJsonObject
+                val results = data.get("result").asJsonObject.entrySet()
+
+                val ret = ArrayList<DailyInfo>()
+
+                results.forEach {
+                    val key = it.key
+                    val value = it.value
+
+                    if (!"hasMore".equals(key)) {
+                        val dailyInfo = gson.fromJson(value, DailyInfo::class.java)
+                        ret.add (dailyInfo)
+                    }
+                }
+
+                reader.close()
+                ret
+            }
+        }
+    }
+
+    private interface NextDayService {
+        @GET
+        @Headers("Accept-Encoding: gzip, deflate")
+        fun getDays(@Url url: String,
+                    @Header("Authorization") auth: String,
+                    @Header("Date") date: String): Call<List<DailyInfo>>;
+    }
+
+    fun loadDaysAsync(fromDate: LocalDate, toDate: LocalDate?): Observable<List<DailyInfo>> {
+        val from = (fromDate.year * 100 * 100 + (fromDate.month.value * 100) + fromDate.dayOfMonth).toString()
+        val to = if (toDate == null) "" else (toDate.year * 100 * 100 + (toDate.month.value * 100) + toDate.dayOfMonth).toString()
+        return getDaysAsync(from, to, listOf("thumbnail", "video")).retry(3)
     }
 
     private fun getDaysAsync(fromDate: String,
                              toDate: String,
-
-                             onNewData: () -> Unit,
-                             retryTimes: Int = 0,
-                             without: List<String> = ArrayList(0)
-    ) {
-        val appKey = AppKey(this.context)
-        val now = DateTime()
-        val fmt = DateTimeFormat.forPattern("E MMM dd yyyy HH:mm:ss 'GMT'Z").withLocale(Locale.US)
-        val currentTimeString = now.toString(fmt)
+                             without: List<String> = emptyList()): Observable<List<DailyInfo>> {
+        val appKey = AppKey.create(this.context)
+        val now = ZonedDateTime.now()
+        val fmt = DateTimeFormatter.ofPattern("E MMM dd yyyy HH:mm:ss 'GMT'Z").withLocale(Locale.US)
+        val currentTimeString = now.format(fmt)
 
         var apiPath = StringBuilder("/api/calendar")
 
-
-        if (fromDate.length() == DateRangeFormat.length()) {
+        if (fromDate.length == DateRangeFormat.length) {
             apiPath.append ("?from=").append(fromDate)
         }
 
-        if (toDate.length() == DateRangeFormat.length()) {
+        if (toDate.length == DateRangeFormat.length) {
             apiPath.append("&to=").append(toDate)
         }
 
-        if (without.count() > 0) {
-            apiPath.append("&")
-            without.fold(apiPath, {
-                (sb, s) ->
-                    sb.append(s).append(",")
-                }
-            )
-            apiPath.deleteCharAt(apiPath.length() - 1)
+        if (!without.isEmpty()) {
+            apiPath.append("&without=")
+            without.fold(apiPath, { sb, s -> sb.append(s).append(",") })
+            apiPath.deleteCharAt(apiPath.length - 1)
         }
-
-        val url = "$BaseUrl$apiPath"
 
 
         val name = appKey.name
         val hash = appKey.generateMd5Hash(apiPath.toString(), currentTimeString)
 
-        Log.d(TAG, "API Path: $apiPath , Date: $currentTimeString , Url: $url , Name: $name , hash: $hash")
+        Log.d(TAG, "API Path: $apiPath , Date: $currentTimeString , Name: $name , App key: ${appKey.key} , hash: $hash")
 
+        val call = nextDayService.getDays(apiPath.toString(), "$name:$hash", currentTimeString)
 
-        val request = Request
-                .Builder()
-                .url(url)
-                .addHeader(UserAgentHeaderName, UserAgent)
-                .addHeader(DateHeaderName, currentTimeString)
-                .addHeader(AuthorizationHeaderName, "$name:$hash")
-                .addHeader(ContentEncodingHeaderName, "gzip, deflate")
-                .get()
-                .build()
+        return Observable.create<Response<List<DailyInfo>>> {
+            it.onStart()
+            try {
+                val c = call.clone()
+                c.enqueue(object : Callback<List<DailyInfo>> {
 
-        httpClient.newCall(request).enqueue(object : Callback {
-            override fun onFailure(request: Request?, e: IOException?) {
-                if (retryTimes < 3) {
-                    getDaysAsync(fromDate, toDate, onNewData, retryTimes + 1)
-                }
+                    override fun onFailure(call: Call<List<DailyInfo>>?, t: Throwable?) {
+                        it.onError(t)
+                    }
+
+                    override fun onResponse(call: Call<List<DailyInfo>>?, response: Response<List<DailyInfo>>?) {
+                        val respCode = response!!.code()
+                        if (respCode >= 300 || respCode < 200) {
+                            Log.w(TAG, "get days failed, resp code: $respCode , message: ${response.message()}")
+                            it.onError(IllegalArgumentException("get days failed, resp code: $respCode , message: ${response.message()}"))
+                            return
+                        }
+
+                        it.onNext(response)
+                        it.onCompleted()
+                    }
+                })
+            } catch(e: Throwable) {
+                it.onError(e)
             }
-
-            override fun onResponse(response: Response?) {
-                if ((response == null || !(isOk(response))) && retryTimes < 3) {
-                    getDaysAsync(fromDate, toDate, onNewData, retryTimes + 1)
-                    return
-                }
-
-                val unzipped = unzipRespBody(response!!)
-                val body = unzipped.body()
-                Log.d(TAG, "body type: " + body!!.javaClass.getName())
-
-                parseData(body.charStream())
-
-                onNewData()
-                body.close()
-            }
-        })
-    }
-
-    private fun unzipRespBody(response: Response): Response {
-        val ce = response.header(ContentEncodingHeaderName, EmptyString)
-
-        if (!GZIP.equalsIgnoreCase(ce)) {
-            return response;
-        }
-
-        if (response.body() == null) {
-            return response;
-        }
-
-        val responseBody = GzipSource(response.body().source());
-        val strippedHeaders = response.headers().newBuilder()
-                .removeAll(ContentEncodingHeaderName)
-                .removeAll(ContentLengthHeaderName)
-                .build();
-        return response.newBuilder()
-                .headers(strippedHeaders)
-                .body(RealResponseBody(strippedHeaders, Okio.buffer(responseBody)))
-                .build();
-    }
-
-    private fun parseData(reader: Reader) {
-        val parser = JsonParser()
-
-        val gson = Gson()
-
-        val data = parser.parse(reader).getAsJsonObject()
-        val results = data.get("result").getAsJsonObject().entrySet()
-
-        results.forEach { e ->
-            if (!"hasMore".equals(e.getKey())) {
-                val day = Integer.parseInt (e.getKey())
-                val dailyInfo = gson.fromJson(e.getValue(), javaClass<DailyInfo>())
-                cache.append(day, dailyInfo)
-            }
-        }
+        }.map { it -> it.body() }
 
 
-    }
-
-    public fun getLastNDaysAsync(n: Int, onNewData: () -> Unit): Unit {
-        val now = DateTime()
-        val from = now.minusDays(n).toString(DateRangeFormat)
-        val to = now.toString(DateRangeFormat)
-
-        getDaysAsync(from, to, onNewData)
     }
 }
