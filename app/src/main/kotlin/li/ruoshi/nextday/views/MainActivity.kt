@@ -38,8 +38,8 @@ class MainActivity : BaseActivity(), IMainView {
     var daysAdapter: DaysAdapter? = null
     private val mPresenter = MainPresenter(this)
 
-    fun ViewManager.swipeControllableViewPager() = swipeControllableViewPager {}
-    fun ViewManager.swipeControllableViewPager(init: SwipeControllableViewPager.() -> Unit) = ankoView({ SwipeControllableViewPager(it) }, init)
+    inline fun ViewManager.swipeControllableViewPager() = swipeControllableViewPager {}
+    inline fun ViewManager.swipeControllableViewPager(init: SwipeControllableViewPager.() -> Unit) = ankoView({ SwipeControllableViewPager(it) }, init)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -7,10 +7,6 @@ import li.ruoshi.nextday.utils.RxBus
  * Created by ruoshili on 1/10/16.
  */
 class SongPlayer {
-    companion object {
-        val Instance = SongPlayer()
-    }
-
     private enum class PlayerState {
         Init,
         Preparing,
@@ -30,6 +26,8 @@ class SongPlayer {
         if (state != PlayerState.Init) {
             stop()
         }
+
+        this.music = music
 
         mediaPlayer.setOnPreparedListener {
             it.start()
