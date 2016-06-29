@@ -11,3 +11,6 @@ android:
 
 notifications:
   email: false
+
+jdk:
+  - oraclejdk8
