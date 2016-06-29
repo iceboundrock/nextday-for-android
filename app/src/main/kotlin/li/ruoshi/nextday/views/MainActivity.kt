@@ -39,7 +39,7 @@ class MainActivity : BaseActivity(), IMainView {
     private val mPresenter = MainPresenter(this)
 
     inline fun ViewManager.swipeControllableViewPager() = swipeControllableViewPager {}
-    inline fun ViewManager.swipeControllableViewPager(init: SwipeControllableViewPager.() -> Unit) = ankoView({ SwipeControllableViewPager(it) }, init)
+    inline fun ViewManager.swipeControllableViewPager(init: SwipeControllableViewPager.() -> Unit) = ankoView({ SwipeControllableViewPager(it) }, 0, init)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
